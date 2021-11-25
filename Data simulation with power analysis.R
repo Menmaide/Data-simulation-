@@ -7,6 +7,7 @@ library(lmerTest)
 
 # Reading in, organizing data
 datagraph = read.csv('/Users/maidamuhtar/Documents/Lakarprogrammet/Kurs 8/OCT_Aurora_Tegaderm_Data File ver.3.1_Graphs.csv', sep=';')
+# Access data through: <iframe src="https://widgets.figshare.com/articles/17041157/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0"></iframe>
 
 # Changing the variables 'Participant', 'Site', 'Tegaderm' into factors in datagraph
 datagraph$Participant = factor(datagraph$Participant, levels=c(1,2,3,4,5,6), labels=c('P001','P002','P003','P004','P005','P006'))
