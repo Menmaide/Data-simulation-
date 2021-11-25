@@ -76,7 +76,6 @@ datFA_sim <- trials.sim %>%
   select(subj_id, obs_n, Tegaderm, X_i, Mx_Ind_s)
 
 # Visualizing and checking data, comparing it to observed data 
-
 ggplot(datFA_sim, aes(Tegaderm, Mx_Ind_s, color = Tegaderm)) +
   geom_hline(yintercept = beta_0) +
   geom_violin(alpha = 0.5) +
@@ -101,8 +100,13 @@ ggplot(datFA, aes(Tegaderm, Mx_Ind, color = Tegaderm)) +
   geom_violin(alpha = 0.5) +
   geom_boxplot(width = 0.2, position = position_dodge(width = 0.9))
 
-# Set up the custom data simulation function
+# Get a tidy table of results
+broom.mixed::tidy(mod_datFA_sim) %>%
+  mutate(sim = c(beta_0, beta_1, tau_0,
+                 rho, tau_1, sigma)) %>%
+  select(1:3, 9, 4:8)
 
+# Set up the custom data simulation function
 my_sim_datFA <- function(
   n_subj = 6, # number of subjects
   n_bare = 30, # number of bare stimuli 
@@ -135,15 +139,6 @@ my_sim_datFA <- function(
            Mx_Ind_s = beta_0 + T_0s + (beta_1 + T_1s) * X_i + e_si) %>%
     select(subj_id, obs_n,Tegaderm ,X_i, Mx_Ind_s)
   }
-
-mod_datFA_sim <- lmer(Mx_Ind_s ~ Tegaderm + (1 + Tegaderm | subj_id), data = datFA_sim)
-summary(mod_datFA_sim)
-
-# Get a tidy table of results
-broom.mixed::tidy(mod_datFA_sim) %>%
-  mutate(sim = c(beta_0, beta_1, tau_0,
-                 rho, tau_1, sigma)) %>%
-  select(1:3, 9, 4:8)
 
 # Simulate, analyze, and return atable of parameter estimates
 single_run <- function(...) {
