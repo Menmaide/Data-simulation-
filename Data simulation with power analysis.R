@@ -3,6 +3,9 @@ library(tidyverse)
 library(faux)
 library(lmerTest)
 
+# Primary reference: Barr, Dale J. (2021). Learning statistical models through simulation in R: An interactive textbook. 
+# Version 1.0.0. Retrieved from https://psyteachr.github.io/stat-models-v1.
+
 # DATA SIMULATION 
 
 # Reading in, organizing data
@@ -21,7 +24,7 @@ datFA <- subset(datagraphFA, select = -c(X10pc_P, X50pc_P, X50pc_D, X10pc_D, FNo
 
 summary(datFA)
 
-# Creating a model on existing data 
+# Creating a mixed effects model on existing data 
 mod_datFA <- lmer(Mx_Ind ~ Tegaderm + (Tegaderm | Participant), datFA)
 summary(mod_datFA)
 mod_datFA_sum <- summary(mod_datFA)
@@ -32,7 +35,7 @@ beta_1 <- -0.2189 # mean difference between Film - Bare, i.e. the effect of Film
 tau_0 <- 0.2061 # by-subject random intercept sd 
 tau_1 <- 0.07218 # by-subject random slope sd 
 rho <- -0.9361 # correlation between intercept and slope
-sigma <- 0.06389 # residual (error) sd 
+sigma <- 0.06289 # residual (error) sd 
 
 # Set number of subjects and items
 n_subj <- 6 # number of subjects
@@ -75,30 +78,64 @@ datFA_sim <- trials.sim %>%
   mutate(Mx_Ind_s = beta_0 + T_0s + (beta_1 + T_1s) * X_i + e_si) %>%
   select(subj_id, obs_n, Tegaderm, X_i, Mx_Ind_s)
 
-# Visualizing and checking data, comparing it to observed data 
+# Visualizing and checking simulated data, comparing it to collected data
+
+# Graph 1 - simulated data
 ggplot(datFA_sim, aes(Tegaderm, Mx_Ind_s, color = Tegaderm)) +
   geom_hline(yintercept = beta_0) +
   geom_violin(alpha = 0.5) +
   geom_boxplot(width = 0.2, position = position_dodge(width = 0.9))
 
-mod_datFA_sim <- lmer(Mx_Ind_s ~ Tegaderm + (1 + Tegaderm | subj_id), data = datFA_sim)
-summary(mod_datFA_sim)
-mod_datFA_simsum <- summary(mod_datFA_sim)
-
-mod_datFA_simsum$ngrps
-mod_datFA_simsum$varcor
-mod_datFA_simsum$coefficients
-
-# Collected data
-mod_datFA_sum$ngrps
-mod_datFA_sum$varcor
-mod_datFA_sum$coefficients
-
-# Graph on collected data
+# Graph 1 - collected data
 ggplot(datFA, aes(Tegaderm, Mx_Ind, color = Tegaderm)) +
   geom_hline(yintercept = 0.8924) +
   geom_violin(alpha = 0.5) +
   geom_boxplot(width = 0.2, position = position_dodge(width = 0.9))
+
+# Graph 2 - simulated data
+ggplot(datFA_sim, aes(Tegaderm, Mx_Ind_s, color=factor(subj_id))) +
+  geom_jitter(width=0, size=2) + 
+  ggtitle('Forearm') +
+  guides(color=guide_legend('Subject', 
+                            title.theme = (element_text(size = 11)),
+                            label.theme = (element_text(size = 11)))) +
+  facet_wrap(. ~ subj_id, nrow = 3) +
+  theme_bw() + 
+  ylab('Indentation depth (mm)') + 
+  xlab ('Skin condition')
+
+# Graph 2 - collected data
+ggplot(datFA, aes(Tegaderm, Mx_Ind, color=Participant)) +
+  geom_jitter(width=0, size=2) + 
+  ggtitle('Forearm') +
+  guides(color=guide_legend('Subject', 
+                            title.theme = (element_text(size = 11)),
+                            label.theme = (element_text(size = 11)))) +
+  facet_wrap(. ~ Participant, nrow = 3) +
+  theme_bw() + 
+  ylab('Indentation depth (mm)') + 
+  xlab ('Skin condition')
+
+# Creating a mixed effects model for the simulated data 
+mod_datFA_sim <- lmer(Mx_Ind_s ~ Tegaderm + (1 + Tegaderm | subj_id), data = datFA_sim)
+summary(mod_datFA_sim)
+mod_datFA_simsum <- summary(mod_datFA_sim)
+
+# Parameters in the mixed effects model for the simulated data
+# Number of subjects
+mod_datFA_simsum$ngrps
+# Random factors
+mod_datFA_simsum$varcor
+# Fixed factors
+mod_datFA_simsum$coefficients
+
+# Parameters in the mixed effects model for the collected data
+# Number of subjects
+mod_datFA_sum$ngrps
+# Random factors
+mod_datFA_sum$varcor
+# Fixed factors
+mod_datFA_sum$coefficients
 
 # Get a tidy table of results
 broom.mixed::tidy(mod_datFA_sim) %>%
@@ -140,7 +177,7 @@ my_sim_datFA <- function(
     select(subj_id, obs_n,Tegaderm ,X_i, Mx_Ind_s)
   }
 
-# Simulate, analyze, and return atable of parameter estimates
+# Simulate, analyze, and return a table of parameter estimates
 single_run <- function(...) {
   
 # . . . is a shortcut that forwards any arguments to 
@@ -155,7 +192,7 @@ single_run <- function(...) {
 single_run()
 
 # Run simulations and save to a file
-n_runs <- 100 # use at least 1000 to get stable estimates
+n_runs <- 1000 # use at least 1000 to get stable estimates
 sims_FA <- purrr::map_df(1:n_runs, ~ single_run()) 
 write_csv(sims_FA, "sims_FA.csv")
 
@@ -211,6 +248,11 @@ ggplot(sims_FA_slope, aes(estimate)) +
   geom_vline(aes(xintercept= - 0.2189),
              color="blue", linetype="dashed", size=1) +
   theme_light()
+
+
+
+
+
 
 
 
